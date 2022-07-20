@@ -1,0 +1,218 @@
+#######################################################
+# .bashrc file
+# #
+# Running on Debian
+#######################################################
+
+# Misc config
+#######################################################
+# ~/.bashrc: executed by bash(1) for non-login shells.
+# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
+# for examples
+
+# If not running interactively, don't do anything
+[ -z "$PS1" ] && return
+
+# erase all previous lines that match current command, keep current command. See
+# bash(1) for more options
+shopt -s histappend
+shopt -s histverify
+export HISTCONTROL=erasedups
+
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+
+# Better cd, allows cool stuff like autocorrection and autocd by just typing the path
+shopt -s autocd
+shopt -s cdspell
+
+if hash nvim 2>/dev/null;then
+  # Use neovim for manpages
+  export MANPAGER='nvim +Man!'
+fi
+
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(lesspipe)"
+
+# start ssh-agent if needed
+[ -z "$SSH-AUTH-SOCK" ] && eval "$(ssh-agent)" > /dev/null
+
+# load additional files
+if [ -f ~/.bash_aliases ]; then
+  . ~/.bash_aliases
+fi
+
+if [ -f /etc/bash_completion ]; then
+  . /etc/bash_completion
+fi
+
+if [ -f /etc/bash_completion.d/git ]; then
+  . /etc/bash_completion.d/git
+fi
+
+if [ -f /etc/bash_completion.d/git-prompt ]; then
+  . /etc/bash_completion.d/git-prompt
+fi
+
+if [ -f ~/.localrc ]; then
+  . ~/.localrc
+fi
+
+# fuzzy finder in bash if installed
+if [ -d /usr/share/doc/fzf ] && [ -z "$INSIDE_EMACS" ]; then
+  . /usr/share/doc/fzf/examples/key-bindings.bash
+fi
+
+# ignore case on completion (except if shell is called from inside emacs)
+[ -z "$INSIDE_EMACS" ] && bind 'set completion-ignore-case on'
+
+export ALTERNATE_EDITOR=""
+export EDITOR="emacsclient -t"                  # $EDITOR opens in terminal
+export VISUAL="emacsclient -c -a \"\""          # $VISUAL opens in GUI mode
+export MU_PLAY_PROGRAM="evince"                 # program to open attachments in mu4e
+
+export PATH=$HOME/usr/bin:$PATH
+export PATH=$HOME/bin:$PATH
+export PATH=$HOME/.local/bin:$PATH
+export PATH=$HOME/.screenlayout:$PATH
+export PATH=$HOME/repos/rofi-menus/scripts:$PATH
+
+# Rust & Cargo support
+[ -d $HOME/.cargo/bin/ ] && export PATH=$HOME/.cargo/bin:$PATH
+[ -f $HOME/.cargo/env ] && source "$HOME/.cargo/env"
+
+# ruby setup ##################################################################
+if hash rbenv 2>/dev/null; then
+  export PATH="$HOME/.rbenv/bin:$PATH"
+  eval "$(rbenv init -)"
+  export PATH="$HOME/.rbenv/shims:$PATH"
+  [ -f "/home/duncan/.rbenv/completions/rbenv.bash" ] && source "/home/duncan/.rbenv/completions/rbenv.bash"
+fi
+
+# switch to 256 color term (especially for using emacs inside term)
+# export TERM=screen-256color
+
+export GTK_IM_MODULE=xim
+
+export PATH=$MAVEN_HOME/bin:$PATH
+export PATH=$JAVA_HOME/bin:$PATH
+
+use-java-8 () {
+  [[ -n $SDKMAN_DIR && -n $JAVA_8_VERSION ]] && sdk use java $JAVA_8_VERSION || export JAVA_HOME=$JAVA_8
+}
+
+use-java-17 () {
+  [[ -n $SDKMAN_DIR && -n $JAVA_17_VERSION ]] && sdk use java $JAVA_17_VERSION || export JAVA_HOME=$JAVA_17
+}
+
+maven-debug () {
+  mvn $@ -Drun.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005"
+}
+
+maven-eclipse () {
+  mvn eclipse:configure-workspace -Declipse.workspace="$WORKSPACE" eclipse:clean eclipse:eclipse -Dwtpversion=1.5 $@
+}
+
+maven-install-eclipse () {
+  mvn clean install $@ && mvn eclipse:configure-workspace -Declipse.workspace="$WORKSPACE" eclipse:clean eclipse:eclipse -Dwtpversion=1.5
+}
+
+update-etags () {
+  [ -f TAGS ] && rm TAGS
+  find . -name '*.java' -exec etags -a {} \;
+}
+
+update-project () {
+  PROJECT_DIR=$1
+  FORMER_DIR=$(pwd)
+  cd "$PROJECT_DIR" || exit
+  PROJECT_NAME=$(basename "$PROJECT_DIR")
+  echo "* ${BOLD}$PROJECT_NAME${NORMAL}"
+  [ -d ".git" ] && git up
+  [ -d ".svn" ] && svn update
+  #   update-etags
+  echo ""
+  cd "$FORMER_DIR" || exit
+}
+
+update-all () {
+  for dir in $(find "$HOME" -type d -iname '.git' -o -maxdepth 3 -iname '.svn' 2> /dev/null | xargs dirname | sort); do
+    update-project "$dir"
+  done
+}
+
+build-all () {
+  FORMER_DIR=$(pwd)
+  for dir in $(find "$HOME/projets/" -type f -maxdepth 2 -name 'pom.xml' 2> /dev/null | xargs dirname | sort); do
+    cd "$dir" || exit
+    echo "building $dir..."
+    mvn clean install -U &> "$HOME/projets/mvn-output.log"
+    if [ $? != 0 ]; then
+
+      echo "build failed!" ; cp "$HOME/projets/mvn-output.log" "$HOME/projets/mvn-output-$(basename $dir).log"
+    fi
+  done
+  rm "$HOME/projets/mvn-output.log"
+  cd "$FORMER_DIR" || exit
+}
+
+
+# added by travis gem
+[ -f /home/arthur.leothaud/.travis/travis.sh ] && source /home/arthur.leothaud/.travis/travis.sh
+
+# icons in terminal
+[[ -f ~/.local/share/icons-in-terminal/icons_bash.sh ]] && source ~/.local/share/icons-in-terminal/icons_bash.sh
+
+if hash starship 2>/dev/null; then
+
+  # trying out starship
+  eval "$(starship init bash)"
+  export STARSHIP_CONFIG=~/.starship.toml
+
+else
+  # define a few colours
+
+  BOLD=$(tput bold)
+  NORMAL=$(tput sgr0)
+
+  BLACK='\[\e[0;30m\]'
+  BLUE='\[\e[0;34m\]'
+  GREEN='\[\e[0;32m\]'
+  CYAN='\[\e[0;36m\]'
+  RED='\[\e[0;31m\]'
+  PURPLE='\[\e[0;35m\]'
+  BROWN='\[\e[0;33m\]'
+  L_GREY='\[\e[0;37m\]'
+  GREY='\[\e[1;30m\]'
+  L_BLUE='\[\e[1;34m\]'
+  L_GREEN='\[\e[1;32m\]'
+  L_CYAN='\[\e[1;36m\]'
+  L_RED='\[\e[1;31m\]'
+  L_PURPLE='\[\e[1;35m\]'
+  YELLOW='\[\e[1;33m\]'
+  WHITE='\[\e[1;37m\]'
+  NC='\[\e[0m\]' # No Colour
+
+  # infos git dans le prompt
+  GIT_PS1_SHOWDIRTYSTATE=1
+  GIT_PS1_SHOWUNTRACKEDFILES=1
+  GIT_PS1_SHOWSTASHSTATE=1
+  GIT_PS1_SHOWUPSTREAM=verbose
+  GIT_PS1_DESCRIBE_STYLE=branch
+  GIT_PS1_SHOWCOLORHINTS=1
+  GIT_INFOS='$(__git_ps1)'
+
+  # prompt
+  #######################################################
+  PS1="$GREY($L_GREEN\u$GREY@$L_BLUE\h$GREY)" # (user@host)
+  PS1="${PS1}($RED\A$GREY)" # (23:59) date HH:MM
+  PS1="${PS1}($PURPLE\j$GREY)" # (0) jobs
+  PS1="${PS1}($CYAN\w$GREY)" # (~/current/directory)
+  PS1="${PS1}$L_RED$GIT_INFOS\n" # (master *+%) git infos
+  PS1="${PS1}$WHITE→$NC " # '→' prompt character
+fi
+
+# THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+# $SDKMAN_DIR must be defined in .localrc file
+[[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]] && source "$SDKMAN_DIR/bin/sdkman-init.sh"

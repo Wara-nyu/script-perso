@@ -1,7 +1,10 @@
+runtime plugs.vim
 set nocp " =nocompatible
 set number " n° de ligne
 
 filetype plugin indent on " couleur et indentation
+set fo+=t
+au FileType gitcommit setlocal tw=72
 syntax on " a priori pour reconnaitre les languages et colorier selon
 set expandtab " pour inserer des espaces quand tab est pressé
 set tabstop=2 " pour que tab fasse 2 espaces
@@ -19,8 +22,13 @@ endif
 set wildmenu
 "set wildmode=longest,full ???
 
-call plug#begin('~/.vim/plugged')
-Plug 'tpope/vim-surround'
+set linebreak
+
+command! Nl set nolinebreak | set nonumber
+
+call plug#begin('~/.vim/vim-plug')
+
+Plug 'jpalardy/vim-slime'
+
 call plug#end()
 
-set linebreak

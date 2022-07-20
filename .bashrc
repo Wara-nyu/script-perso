@@ -88,9 +88,8 @@ fi
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
 # some more ls aliases
-alias ll='ls -alF'
-alias la='ls -A'
-alias l='ls -CF'
+alias ll='ls -Al'
+#alias l='ls -CF'
 
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
@@ -100,6 +99,13 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 # You may want to put all your additions into a separate file like
 # ~/.bash_aliases, instead of adding them here directly.
 # See /usr/share/doc/bash-doc/examples in the bash-doc package.
+
+alias gsh='bash ~/Bureau/testPerso/gameshell/gameshell.sh'
+alias coop='cd ~/Bureau/git/Coopener/'
+alias cotcot='cd ~/Bureau/testPerso/ChickenEggMinesweeper'
+alias moulin='cd ~/Bureau/git/moulinette; sdk use java 17.0.2-tem'
+alias cortex='cd ~/cortex/cortex; sdk use java 17.0.2-tem'
+alias ergo='source ~/Bureau/testPerso/scriptClavier.sh'
 
 if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
@@ -118,4 +124,3 @@ fi
 
 echo -e "\e[7;42mHi Del !!!\e[0m"
 alias sl="sl -a"
-#alias "sl -a"="sl"
